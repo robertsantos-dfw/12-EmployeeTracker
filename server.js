@@ -164,6 +164,7 @@ async function addDepartment() {
             connection.query("INSERT INTO DEPARTMENT (name) VALUES (?)", function(err, result) {
                 if (err) throw err;
                 console.log("Department is now added.")
+                interactWithDB();
             })
         });
 }
@@ -209,27 +210,58 @@ async function addRoles() {
             "INSERT INTO role (title, salary, department_id) VALUES (?,?,?)", [answer.title, answer.salary, departmentIdName[answer.department_Id]],
             function(err, result) {
                 if (err) throw err;
-                console.log("Role added! Next...");
+                console.log("The role is now added!");
                 interactWithDB();
             }
         );
     });
 }
 
-async function addDepartment() {
-    inquirer.prompt({
-            name: "action",
-            type: "input",
-            message: "What is the name of the department?",
-        })
-        .then(function(answer) {
-            connection.query("INSERT INTO DEPARTMENTS (name) VALUES (?)", function(err, result) {
-                if (err) throw err;
-                console.log("Department is now added.")
-            })
-        });
-}
+async function addEmployees() {
+    const roleIdTitle = {};
+    const managerId = {};
 
+    //Choices arrays from existing Roles and Managers
+    const myRoleChoices = await availableRoles();
+    const myManagerChoices = await availableManager();
+
+    const questions = [{
+            name: "firstName",
+            type: "input",
+            message: "What is the employee's first name?",
+        },
+        {
+            name: "lastName",
+            type: "input",
+            message: "What is the employee's last name?",
+        },
+        {
+            name: "manager",
+            type: "list",
+            message: "Who does this employee report to?",
+            choices: myManagerChoices,
+        },
+        {
+            name: "role",
+            type: "list",
+            message: "What is this employee's role?",
+            choices: myRoleChoices,
+        },
+    ];
+
+    //Sending question data to build INSERT query
+    const answer = await inquirer.prompt(questions);
+    const res = await inquirer.prompt(questions).then(function(answer) {
+        connection.query(
+            "INSERT INTO EMPLOYEE (first_name, last_name, manager_id, role_id) VALUES (?,?,?,?)", [answer.firstName, answer.lastName, answer.manager, answer.role],
+            function(err, result) {
+                if (err) throw err;
+                console.log(`Employee ${answer.firstName} ${answer.lastName} was added!`);
+                interactWithDB();
+            }
+        );
+    });
+}
 
 function add() {
     inquirer
@@ -254,7 +286,7 @@ function add() {
                     break;
 
                 case "Employees":
-                    addEmployee();
+                    addEmployees();
                     break;
             }
         });
