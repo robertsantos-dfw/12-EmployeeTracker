@@ -78,7 +78,7 @@ async function viewTheTotalUtilizedBudgetOfADepartment() {
     });
 }
 
-
+//Starts the questioning function for the app
 function interactWithDB() {
     inquirer
         .prompt({
@@ -147,6 +147,114 @@ function view() {
 
                 case "The total utilized budget of a department":
                     viewTheTotalUtilizedBudgetOfADepartment();
+                    break;
+            }
+        });
+}
+
+//Define general ADD departments, roles, employees function
+
+async function addDepartment() {
+    inquirer.prompt({
+            name: "action",
+            type: "input",
+            message: "What is the name of the department you wish to add?",
+        })
+        .then(function(answer) {
+            connection.query("INSERT INTO DEPARTMENT (name) VALUES (?)", function(err, result) {
+                if (err) throw err;
+                console.log("Department is now added.")
+            })
+        });
+}
+
+async function addRoles() {
+    let myChoices = [];
+    const departmentIdName = {};
+
+    availableDepartments();
+
+    const questions = [{
+            name: "title",
+            type: "input",
+            message: "What is the job title for this position?",
+        },
+        {
+            name: "salary",
+            type: "input",
+            message: "What is the salary for this position?",
+        },
+        {
+            name: "department_Id",
+            type: "list",
+            message: "Please select the department for this role?",
+            choices: myChoices,
+        },
+    ];
+
+    //function to provide departments as choices and reference it ID to the role
+    function availableDepartments() {
+        let sql = "SELECT * FROM department";
+        connection.query(sql, async function(err, result) {
+            if (err) throw err;
+            for (let i = 0; i < result.length; i++) {
+                myChoices.push(result[i].name);
+                departmentIdName[result[i].name] = result[i].id;
+            }
+        });
+    }
+    //INSERT data to the DB
+    inquirer.prompt(questions).then(function(answer) {
+        connection.query(
+            "INSERT INTO role (title, salary, department_id) VALUES (?,?,?)", [answer.title, answer.salary, departmentIdName[answer.department_Id]],
+            function(err, result) {
+                if (err) throw err;
+                console.log("Role added! Next...");
+                interactWithDB();
+            }
+        );
+    });
+}
+
+async function addDepartment() {
+    inquirer.prompt({
+            name: "action",
+            type: "input",
+            message: "What is the name of the department?",
+        })
+        .then(function(answer) {
+            connection.query("INSERT INTO DEPARTMENTS (name) VALUES (?)", function(err, result) {
+                if (err) throw err;
+                console.log("Department is now added.")
+            })
+        });
+}
+
+
+function add() {
+    inquirer
+        .prompt({
+            name: "action",
+            type: "rawlist",
+            message: "What would you like to ADD?",
+            choices: [
+                "Departments",
+                "Roles",
+                "Employees",
+            ],
+        })
+        .then(function(answer) {
+            switch (answer.action) {
+                case "Departments":
+                    addDepartment();
+                    break;
+
+                case "Roles":
+                    addRoles();
+                    break;
+
+                case "Employees":
+                    addEmployee();
                     break;
             }
         });
