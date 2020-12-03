@@ -47,6 +47,6 @@ CREATE TABLE employee (
 );
 
 -- Inserted a set of records into the table
-INSERT INTO employee (first_name, last_name, roleid, managerid)
-VALUES ("Robert","Santos", 1, 0), ("Scott","Arnold", 2, 0), ("Captain","America", 3, 0), ("Stan","Lee", 4, 0);
+INSERT INTO employee (first_name, last_name, role_id, manager_id)
+VALUES ("Robert","Santos", 1, NULL), ("Scott","Arnold", 2, NULL), ("Captain","America", 3, NULL), ("Stan","Lee", 4, NULL);
 
