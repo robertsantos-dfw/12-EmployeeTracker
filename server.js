@@ -31,8 +31,8 @@ async function availableRoles() {
     await connection.query(sql, function(err, result) {
         if (err) throw err;
         for (let i = 0; i < result.length; i++) {
-            console.log(result[i].title + " " + result[i].salary);
-            //interactWithDB();
+            console.table(result[i].title + " " + result[i].salary);
+
         }
     });
 }
@@ -43,11 +43,40 @@ async function availableDepartment() {
         if (err) throw err;
         for (let i = 0; i < result.length; i++) {
             console.table(result[i].name);
-            //interactWithDB();
+
         }
     });
 }
 
+async function availableEmployee() {
+    let sql = "select * from employee";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(`${result[i].first_name}, ${result[i].last_name}`);
+        }
+    });
+}
+
+async function viewEmployeesByManager() {
+    let sql = "SELECT * FROM employee WHERE superviserORmanager_id='?'";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(`${result[i].first_name}, ${result[i].last_name}`);
+        }
+    });
+}
+
+async function viewTheTotalUtilizedBudgetOfADepartment() {
+    let sql = "SELECT SUM(role.salary) as total, department.name as name FROM ((role INNER JOIN employee ON role.id = employee.role_id) INNER JOIN department ON role.department_id = department.id) WHERE department.id = ? GROUP BY department.id";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.log(`The total utilized budget for ${result[0].name} department is $${result[0].total}`);
+        }
+    });
+}
 
 
 function interactWithDB() {
