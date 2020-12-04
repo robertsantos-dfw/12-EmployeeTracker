@@ -36,6 +36,16 @@ async function availableRoles() {
         }
     });
 }
+async function availableManager() {
+    let sql = "select * from employee WHERE role_id = 1;";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(result[i].first_name + " " + result[i].last_name);
+
+        }
+    });
+}
 
 async function availableDepartment() {
     let sql = "select * from department";
