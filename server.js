@@ -3,6 +3,7 @@ const { connect } = require("http2");
 var inquirer = require("inquirer");
 var mysql = require("mysql");
 var util = require("util");
+var cTable = require('console.table');
 
 // MySQL DB Connection Information (remember to change this with our specific credentials)
 var connection = mysql.createConnection({
@@ -13,80 +14,19 @@ var connection = mysql.createConnection({
     database: "employeetracker_db",
 });
 
-//app.get("/", function(req, res))
-// Initiate MySQL Connection.
+
+// Initiate MySQL Connection and starts app if connection is good.
 connection.connect(function(err) {
     if (err) {
         console.error("error connecting: " + err.stack);
         return;
     }
     console.log("connected as id " + connection.threadId);
+    interactWithDB()
 });
 
-interactWithDB();
+
 connect.query = util.promisify(connection.query);
-
-async function availableRoles() {
-    let sql = "select * from role";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.table(result[i].title + " " + result[i].salary);
-
-        }
-    });
-}
-async function availableManager() {
-    let sql = "select * from employee WHERE role_id = 1;";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.table(result[i].first_name + " " + result[i].last_name);
-
-        }
-    });
-}
-
-async function availableDepartment() {
-    let sql = "select * from department";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.table(result[i].name);
-
-        }
-    });
-}
-
-async function availableEmployee() {
-    let sql = "select * from employee";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.table(`${result[i].first_name}, ${result[i].last_name}`);
-        }
-    });
-}
-
-async function viewEmployeesByManager() {
-    let sql = "SELECT * FROM employee WHERE superviserORmanager_id='?'";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.table(`${result[i].first_name}, ${result[i].last_name}`);
-        }
-    });
-}
-
-async function viewTheTotalUtilizedBudgetOfADepartment() {
-    let sql = "SELECT SUM(role.salary) as total, department.name as name FROM ((role INNER JOIN employee ON role.id = employee.role_id) INNER JOIN department ON role.department_id = department.id) WHERE department.id = ? GROUP BY department.id";
-    await connection.query(sql, function(err, result) {
-        if (err) throw err;
-        for (let i = 0; i < result.length; i++) {
-            console.log(`The total utilized budget for ${result[0].name} department is $${result[0].total}`);
-        }
-    });
-}
 
 //Starts the questioning function for the app
 function interactWithDB() {
@@ -120,6 +60,98 @@ function interactWithDB() {
             }
         });
 }
+
+
+
+async function availableRoles() {
+    let sql = "SELECT *, department.name AS department FROM role INNER JOIN department on department.id = role.department_id;";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(result[i].department + " " + result[i].title + " " + result[i].salary);
+        }
+        console.log('What would you like to do next?');
+        interactWithDB();
+    });
+}
+async function availableManager() {
+    let sql = "select * from employee WHERE role_id = 1;";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(result[i].first_name + " " + result[i].first_name + " " + result[i].last_name);
+        }
+        console.log('What would you like to do next?');
+        interactWithDB();
+    });
+}
+
+async function availableDepartment() {
+    let sql = "select * from department";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(result[i].name);
+
+        }
+        console.log('What would you like to do next?')
+        interactWithDB();
+    });
+}
+
+async function availableEmployee() {
+    let sql = "SELECT * from employeetracker_db.employee LEFT JOIN ROLE on employee.role_id = role.id LEFT join DEPARTMENT on role.department_id = department.id";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(result[i].title + " " + result[i].first_name + " " + result[i].last_name);
+
+        }
+        console.log('What would you like to do next?');
+        interactWithDB();
+    });
+}
+
+async function viewEmployeesByManager() {
+    let sql = "SELECT * from employee LEFT JOIN ROLE on employee.role_id = role.id;";
+    await connection.query(sql, function(err, result) {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            console.table(`${ result[i].first_name }, ${ result[i].last_name }`);
+
+        }
+        console.log('What would you like to do next?');
+        interactWithDB();
+    });
+}
+
+async function viewTheTotalUtilizedBudgetOfADepartment() {
+    let departmentChoices = [];
+
+    departmentChoices = await availableDepartment();
+
+    await inquirer
+        .prompt({
+            name: "action",
+            type: "rawlist",
+            message: "Which department would you like to view the total utilized budget?",
+            choices: departmentChoices
+        })
+        .then(function(answer) {
+            connection.query(
+                "SELECT SUM(role.salary) as total, department.name as name FROM ((role INNER JOIN employee ON role.id = employee.role_id) INNER JOIN department ON role.department_id = department.id) WHERE department.id = ? GROUP BY department.id",
+                answer.action,
+                function(err, result) {
+                    if (err) throw err;
+                    console.log(`The total utilized budget for ${result[0].name} department is $${result[0].total}`);
+
+                    console.log('What would you like to do next?');
+                    interactWithDB();
+                }
+            );
+        });
+}
+
 
 
 //Define general View departments, roles, employees, employees by manager and the total utilized budget of a department function
@@ -171,9 +203,11 @@ async function addDepartment() {
             message: "What is the name of the department you wish to add?",
         })
         .then(function(answer) {
-            connection.query("INSERT INTO DEPARTMENT (name) VALUES (?)", function(err, result) {
+            connection.query("INSERT INTO department (name) VALUES (?)", answer.action, function(err) {
                 if (err) throw err;
-                console.log("Department is now added.")
+                console.log("Department added successfully!");
+
+                console.log('What would you like to do next?')
                 interactWithDB();
             })
         });
@@ -221,56 +255,88 @@ async function addRoles() {
             function(err, result) {
                 if (err) throw err;
                 console.log("The role is now added!");
+
+                console.log('What would you like to do next?')
                 interactWithDB();
             }
+
         );
     });
 }
 
 async function addEmployees() {
-    const roleIdTitle = {};
-    const managerId = {};
 
     //Choices arrays from existing Roles and Managers
-    const myRoleChoices = await availableRoles();
-    const myManagerChoices = await availableManager();
+    const roleIdName = {};
+    let myRoleChoices = [];
+    const managerIdName = {};
+    let myManagerChoices = [];
+
+    availableRoles();
+    availableManager();
 
     const questions = [{
             name: "firstName",
             type: "input",
-            message: "What is the employee's first name?",
+            message: "What the employee's first name?",
         },
         {
             name: "lastName",
             type: "input",
-            message: "What is the employee's last name?",
+            message: "What the employee's last name?",
         },
         {
-            name: "manager",
+            name: "roleID",
             type: "list",
-            message: "Who does this employee report to?",
-            choices: myManagerChoices,
-        },
-        {
-            name: "role",
-            type: "list",
-            message: "What is this employee's role?",
+            message: "Please select the role/position for this employee?",
             choices: myRoleChoices,
+        },
+        {
+            name: "managerID",
+            type: "list",
+            message: "Please select the manager/superviser of this employee?",
+            choices: myManagerChoices,
         },
     ];
 
+    function availableRoles() {
+        let sql = "SELECT * FROM ROLE";
+        connection.query(sql, async function(err, result) {
+            if (err) throw err;
+            for (let i = 0; i < result.length; i++) {
+                myRoleChoices.push(result[i].name);
+                roleIdName[result[i].name] = result[i].id
+            }
+        })
+    }
+
+    function availableManager() {
+        let sql = "select * from employee WHERE role_id = 1";
+        connection.query(sql, async function(err, result) {
+            if (err) throw err;
+            for (let i = 0; i < result.length; i++) {
+                myManagerChoices.push(result[i].name);
+                managerIdName[result[i].name] = result[i].id
+            }
+        })
+    }
+
     //Sending question data to build INSERT query
     const answer = await inquirer.prompt(questions);
-    const res = await inquirer.prompt(questions).then(function(answer) {
-        connection.query(
-            "INSERT INTO EMPLOYEE (first_name, last_name, manager_id, role_id) VALUES (?,?,?,?)", [answer.firstName, answer.lastName, answer.manager, answer.role],
-            function(err, result) {
-                if (err) throw err;
-                console.log(`Employee ${answer.firstName} ${answer.lastName} was added!`);
-                interactWithDB();
-            }
-        );
-    });
+    connection.query(
+        "INSERT INTO employee (first_name, last_name, manager_id, role_id) VALUES (?,?,?,?)", [
+            answer.firstName,
+            answer.lastName,
+            roleIdName[answer.roleID],
+            managerIdName[answer.managerID],
+        ],
+        function(err, result) {
+            if (err) throw err;
+
+            console.log(`${ answer.firstName } ${ answer.lastName } was added as an employee.`);
+            console.log('What would you like to do next?');
+            interactWithDB();
+        });
 }
 
 function add() {
