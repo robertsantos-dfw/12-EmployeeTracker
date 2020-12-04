@@ -267,10 +267,10 @@ async function addRoles() {
 async function addEmployees() {
 
     //Choices arrays from existing Roles and Managers
-    const roleIdName = {};
-    let myRoleChoices = [];
-    const managerIdName = {};
-    let myManagerChoices = [];
+    let roleIdName = {};
+    var myRoleChoices = [];
+    let managerIdName = {};
+    var myManagerChoices = [];
 
     availableRoles();
     availableManager();
@@ -288,13 +288,13 @@ async function addEmployees() {
         {
             name: "roleID",
             type: "list",
-            message: "Please select the role/position for this employee?",
+            message: "Please select the role for this employee",
             choices: myRoleChoices,
         },
         {
             name: "managerID",
             type: "list",
-            message: "Please select the manager/superviser of this employee?",
+            message: "Please select the manager of this employee",
             choices: myManagerChoices,
         },
     ];
@@ -366,6 +366,60 @@ function add() {
                     break;
             }
         });
+}
+
+function update() {
+    inquirer
+        .prompt({
+            name: "action",
+            type: "rawlist",
+            message: "What would you like to Update?",
+            choices: [
+                "Departments",
+                "Roles",
+                "Employees",
+            ],
+        })
+        .then(function(answer) {
+            switch (answer.action) {
+                case "Departments":
+                    updateDepartment();
+                    break;
+
+                case "Roles":
+                    updateRoles();
+                    break;
+
+                case "Employees":
+                    updateEmployees();
+                    break;
+            }
+        });
+}
+
+async function updateDepartment() {
+    inquirer.prompt({
+            name: "action",
+            type: "input",
+            message: "Which department would you like to update?",
+        })
+        .then(function(answer) {
+            connection.query("UPDATE department SET (name) where id(?)", answer.action, function(err) {
+                if (err) throw err;
+                console.log("Department added successfully!");
+
+                console.log('What would you like to do next?')
+                interactWithDB();
+            })
+        });
+}
+
+async function updateRoles() {
+
+}
+
+async function updateDepartment() {
+
 }
 // a  pp.listen(PORT, function() {
 //         console.log("listening on Port: " + PORT);
